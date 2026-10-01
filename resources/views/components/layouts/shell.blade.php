@@ -24,7 +24,7 @@
 
         {{-- Content --}}
         <div class="lg:pl-64">
-            <x-nav.topbar />
+            <x-topbar />
             <main class="p-4 sm:p-6 lg:p-8">
                 {{ $header ?? '' }}
                 {{ $slot }}

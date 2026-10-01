@@ -16,7 +16,7 @@
         </x-ui.page-header>
     </x-slot:header>
 
-    {{-- <x-profile-nudge :missing="$profileNudge ?? []" /> --}}
+    <x-profile-nudge :missing="$profileNudge ?? []" />
 
     <x-ui.card title="My shortcuts" class="mb-6">
         <div class="flex flex-wrap gap-2">

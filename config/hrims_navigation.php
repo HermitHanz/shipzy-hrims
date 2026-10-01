@@ -36,6 +36,6 @@ return [
         ['label' => 'Users',               'icon' => 'users',    'route' => 'admin.users.index',      'active' => 'admin.users.*',      'permissions' => ['system.user.view']],
         ['label' => 'Roles & permissions', 'icon' => 'shield',   'route' => 'admin.roles.index',      'active' => 'admin.roles.*',      'permissions' => ['system.role.view']],
         ['label' => 'Audit logs',          'icon' => 'document', 'route' => 'admin.audit-logs.index', 'active' => 'admin.audit-logs.*', 'permissions' => ['system.audit-log.view']],
-        ['label' => 'Settings',            'icon' => 'settings', 'route' => 'admin.settings.index',   'active' => 'admin.settings.*',   'permissions' => ['system.settings.view']],
+        ['label' => 'Settings',            'icon' => 'settings', 'route' => 'admin.settings.edit',   'active' => 'admin.settings.*',   'permissions' => ['system.settings.view']],
     ]],
 ];

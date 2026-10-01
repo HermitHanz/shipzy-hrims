@@ -25,6 +25,7 @@ return [
         'employee' => 'Employees',
         'settings' => 'Settings',
         'audit' => 'Audit log',
+        'security' => 'Security',
     ],
 
     'events' => [
@@ -60,6 +61,10 @@ return [
 
         'audit.exported' => ['label' => 'Audit log exported', 'severity' => 'warning'],
         'audit.pruned' => ['label' => 'Old audit entries removed', 'severity' => 'notice'],
+
+        'security.module_unlocked' => ['label' => 'Protected module unlocked', 'severity' => 'notice'],
+        'security.module_unlock_failed' => ['label' => 'Protected module unlock failed', 'severity' => 'warning'],
+        'security.module_unlock_throttled' => ['label' => 'Protected module unlock locked out', 'severity' => 'warning'],
     ],
 
     /*

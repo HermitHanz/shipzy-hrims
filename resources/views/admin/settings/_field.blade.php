@@ -11,7 +11,7 @@
 
     // Client-side hints only. The server enforces the real rules.
     $rules = $field['rules'] ?? [];
-    $rules = collect(is_array($rules) ? $rules : explode('|', (string) $rules))->filter('is_string');
+    $rules = collect(is_array($rules) ? $rules : explode('|', (string) $rules))->filter(fn ($r) => is_string($r));
     $required = $rules->contains('required');
     $min  = optional($rules->first(fn ($r) => str_starts_with($r, 'min:')), fn ($r) => substr($r, 4));
     $max  = optional($rules->first(fn ($r) => str_starts_with($r, 'max:')), fn ($r) => substr($r, 4));

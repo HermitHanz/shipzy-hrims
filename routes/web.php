@@ -14,6 +14,7 @@ use App\Http\Controllers\Employee\ProfileController;
 use App\Http\Controllers\Employee\RevealController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\SettingsController;
+use App\Http\Controllers\ModuleUnlockController;
 
 Route::redirect('/', '/dashboard');
 
@@ -53,10 +54,13 @@ Route::middleware('auth')->group(function () {
         });
 
         // Audit Logs
-        Route::get('audit-logs', [AuditLogController::class, 'index'])
-            ->middleware('permission:system.audit-log.view')->name('audit-logs.index');
-        Route::get('audit-logs/export', [AuditLogController::class, 'export'])
-            ->middleware(['permission:system.audit-log.view', 'throttle:10,1'])->name('audit-logs.export');
+        Route::middleware(['permission:system.audit-log.view', 'module.password:audit-log'])->group(function () {
+            Route::get('audit-logs', [AuditLogController::class, 'index'])
+                ->middleware('permission:system.audit-log.view')->name('audit-logs.index');
+            Route::get('audit-logs/export', [AuditLogController::class, 'export'])
+                ->middleware(['permission:system.audit-log.view', 'throttle:10,1'])->name('audit-logs.export');
+        });
+
         // Settings
         Route::get('settings', [SettingsController::class, 'edit'])
             ->middleware('permission:system.settings.view')->name('settings.edit');
@@ -64,6 +68,10 @@ Route::middleware('auth')->group(function () {
             ->middleware('permission:system.settings.edit')->where('group', '[A-Za-z0-9_.-]+')->name('settings.update');
     }); // End of Admin Group Routes
 
+    //Authenticated users can unlock modules (if they have the required permissions)
+    Route::get('unlock/{module}', [ModuleUnlockController::class, 'show'])->name('module.unlock.show');
+    Route::post('unlock/{module}', [ModuleUnlockController::class, 'store'])->middleware('throttle:20,1')->name('module.unlock.store');
+    Route::delete('unlock/{module}', [ModuleUnlockController::class, 'destroy'])->name('module.unlock.destroy');
     /*
     *
     * Employee Group Routes

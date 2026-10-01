@@ -15,8 +15,10 @@
     <x-slot:header>
         <x-ui.page-header title="Audit log" subtitle="A record of sensitive actions across the system." />
     </x-slot:header>
+    
+    <x-module-lock module="audit-log" />
 
-    <x-ui.card>
+    <x-ui.card class="mt-6">
         <form method="GET" action="{{ route('admin.audit-logs.index') }}" role="search" class="space-y-4">
             <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <x-ui.input name="from" type="date" label="From" :value="$f('from')" />
