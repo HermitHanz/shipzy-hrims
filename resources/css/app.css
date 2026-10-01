@@ -1,0 +1,15 @@
+@import "tailwindcss";
+@source "../views";
+@source "../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+    /* Shipzy brand color: #0A5E84 */
+    --color-brand-50: #eef8fc;
+    --color-brand-100: #d9eff7;
+    --color-brand-500: #0a5e84;
+    --color-brand-600: #084e6e;
+    --color-brand-700: #063f59;
+}
+
+[x-cloak] { display: none !important; }

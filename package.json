@@ -1,0 +1,25 @@
+{
+    "$schema": "https://www.schemastore.org/package.json",
+    "private": true,
+    "type": "module",
+    "scripts": {
+    "dev": "tailwindcss -i ./resources/css/app.css -o ./public/css/app.css --watch",
+    "build": "tailwindcss -i ./resources/css/app.css -o ./public/css/app.css --minify",
+    "alpine": "node -e \"const f=require('fs');f.mkdirSync('public/js',{recursive:true});f.copyFileSync('node_modules/alpinejs/dist/cdn.min.js','public/js/alpine.js')\"",
+    "postinstall": "npm run alpine"
+    },
+    "devDependencies": {
+        "@tailwindcss/cli": "^4.3.3",
+        "@tailwindcss/vite": "^4.0.0",
+        "concurrently": "^10.0.3",
+        "laravel-vite-plugin": "^3.1",
+        "tailwindcss": "^4.3.3",
+        "vite": "^8.0.0"
+    },
+    "optionalDependencies": {
+        "@laravel/multiplex": "^0.4.1"
+    },
+    "dependencies": {
+        "alpinejs": "^3.17.4"
+    }
+}
