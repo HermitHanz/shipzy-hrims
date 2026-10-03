@@ -5,7 +5,7 @@
         <dl class="grid gap-4 text-sm sm:grid-cols-3">
             <div><dt class="text-slate-500">Login email</dt><dd class="mt-0.5 font-medium">{{ $account->email }}</dd></div>
             <div><dt class="text-slate-500">Account status</dt><dd class="mt-0.5"><x-status-badge type="account" :status="$account->status" /></dd></div>
-            <div><dt class="text-slate-500">Last login</dt><dd class="mt-0.5 font-medium">{{ $account->last_login_at ? \Illuminate\Support\Carbon::parse($account->last_login_at)->diffForHumans() : 'Never' }}</dd></div>
+            <div><dt class="text-slate-500">Last login</dt><dd class="mt-0.5 font-medium">{{ $account->last_login_at ? $account->last_login_at->diffForHumans() : 'Never' }}</dd></div>
         </dl>
         @if ($employee->status !== 'separated' && $account->status !== 'active')
             <p class="mt-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-900 ring-1 ring-amber-200">This login is {{ $account->status }}. Changing the employee's status doesn't re-enable it.</p>

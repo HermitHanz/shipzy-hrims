@@ -14,6 +14,7 @@ use App\Support\Employees\Options;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
 class EmployeeController extends Controller
@@ -27,7 +28,7 @@ class EmployeeController extends Controller
             ->when(trim((string) $request->input('q')), fn ($q, $term) => $q->where(
                 fn ($w) => $w->where('first_name', 'like', "%{$term}%")
                     ->orWhere('last_name', 'like', "%{$term}%")
-                    ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ["%{$term}%"])
+                    ->orWhereRaw("{$this->fullNameSql()} LIKE ?", ["%{$term}%"])
                     ->orWhere('employee_number', 'like', "%{$term}%")
                     ->orWhere('work_email', 'like', "%{$term}%")
             ))
@@ -40,10 +41,13 @@ class EmployeeController extends Controller
             ->orderBy('last_name')->orderBy('first_name')
             ->paginate(15)->withQueryString();
 
+        // Filter options: only the units the viewer's visible employees belong to
+        $visible = fn (string $column) => Employee::visibleTo($request->user(), 'employee.record.view')->select($column);
+
         return view('employees.index', [
             'employees'   => $employees,
-            'branches'    => Branch::orderBy('name')->get(),
-            'departments' => Department::orderBy('name')->get(),
+            'branches'    => Branch::whereIn('id', $visible('branch_id'))->orderBy('name')->get(),
+            'departments' => Department::whereIn('id', $visible('department_id'))->orderBy('name')->get(),
             'types'       => Options::types(),
             'statuses'    => Options::statuses(),
         ]);
@@ -105,5 +109,13 @@ class EmployeeController extends Controller
                 ->orderBy('last_name')->orderBy('first_name')->get(),
             'types'       => Options::types(),
         ];
+    }
+
+    /** "First Last" as SQL. SQLite (the test database) has no CONCAT() before 3.44, so it uses ||. */
+    private function fullNameSql(): string
+    {
+        return DB::connection()->getDriverName() === 'sqlite'
+            ? "first_name || ' ' || last_name"
+            : "CONCAT(first_name, ' ', last_name)";
     }
 }

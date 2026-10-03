@@ -26,9 +26,12 @@ class PruneAuditLogs extends Command
         $cutoff = now()->subDays($days);
         $total = 0;
 
+        // Its own connection, so the app's DB user can be denied DELETE on audit_logs
+        $db = DB::connection(config('hrims_audit.prune_connection'));
+
         do {
-            $ids = DB::table('audit_logs')->where('created_at', '<', $cutoff)->orderBy('id')->limit(5000)->pluck('id');
-            $deleted = $ids->isEmpty() ? 0 : DB::table('audit_logs')->whereIn('id', $ids)->delete();
+            $ids = $db->table('audit_logs')->where('created_at', '<', $cutoff)->orderBy('id')->limit(5000)->pluck('id');
+            $deleted = $ids->isEmpty() ? 0 : $db->table('audit_logs')->whereIn('id', $ids)->delete();
             $total += $deleted;
         } while ($deleted > 0);
 

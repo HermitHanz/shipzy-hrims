@@ -14,7 +14,7 @@ class SubmitBankAccount extends EmployeeAction
      * someone else must verify (ReviewBankAccount). Until then the previously verified account,
      * if any, stays in use. This blocks payroll-diversion fraud.
      *
-     * @param  array{bank_name: string, account_name: string, account_number: string}  $data
+     * @param  array{bank_name: string, account_type: string, account_name: string, account_number: string}  $data
      */
     public function handle(User $actor, Employee $employee, array $data): EmployeeBankAccount
     {
@@ -22,10 +22,14 @@ class SubmitBankAccount extends EmployeeAction
 
         $data = $this->clean($data);
 
-        foreach (['bank_name', 'account_name', 'account_number'] as $field) {
+        foreach (['bank_name', 'account_type', 'account_name', 'account_number'] as $field) {
             if (empty($data[$field])) {
                 $this->reject($field, 'This field is required.');
             }
+        }
+
+        if (! array_key_exists($data['account_type'], EmployeeBankAccount::ACCOUNT_TYPES)) {
+            $this->reject('account_type', 'Select a valid account type.');
         }
 
         $digits = preg_replace('/\D+/', '', $data['account_number']) ?? '';
@@ -43,6 +47,7 @@ class SubmitBankAccount extends EmployeeAction
             $account->forceFill([
                 'employee_id' => $employee->id,
                 'bank_name' => $data['bank_name'],
+                'account_type' => $data['account_type'],
                 'account_name' => $data['account_name'],
                 'account_number' => $digits,
                 'account_last4' => substr($digits, -4),
@@ -52,6 +57,7 @@ class SubmitBankAccount extends EmployeeAction
 
             $this->audit->log('employee.bank_account_submitted', $employee, null, [
                 'bank_name' => $data['bank_name'],
+                'account_type' => $data['account_type'],
                 'last4' => $account->account_last4,
             ], $actor);
 

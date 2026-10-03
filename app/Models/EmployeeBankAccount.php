@@ -18,8 +18,11 @@ class EmployeeBankAccount extends Model
     public const REJECTED = 'rejected';
     public const SUPERSEDED = 'superseded';
 
+    /** value => label, for dropdowns. */
+    public const ACCOUNT_TYPES = ['savings' => 'Savings', 'checking' => 'Checking', 'payroll' => 'Payroll'];
+
     protected $fillable = [
-        'employee_id', 'bank_name', 'account_name', 'status', 'rejection_reason',
+        'employee_id', 'bank_name', 'account_type', 'account_name', 'status', 'rejection_reason',
         'submitted_by', 'reviewed_by', 'reviewed_at',
     ];
 
@@ -35,11 +38,24 @@ class EmployeeBankAccount extends Model
         return '••••••' . $this->account_last4;
     }
 
+    /** Null for accounts submitted before account_type existed. */
+    public function accountTypeLabel(): ?string
+    {
+        return self::ACCOUNT_TYPES[$this->account_type] ?? null;
+    }
+
     public function employee(): BelongsTo
     {
         return $this->belongsTo(Employee::class);
     }
 
-    public function submitter() { return $this->belongsTo(\App\Models\User::class, 'submitted_by'); }
-    public function reviewer()  { return $this->belongsTo(\App\Models\User::class, 'reviewed_by'); }
+    public function submitter(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'submitted_by');
+    }
+
+    public function reviewer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reviewed_by');
+    }
 }

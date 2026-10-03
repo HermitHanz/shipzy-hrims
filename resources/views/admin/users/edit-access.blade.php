@@ -30,7 +30,7 @@
                 <div><dt class="text-slate-500">Employee</dt><dd class="mt-0.5 font-medium">{{ $employeeName ?: '—' }}</dd></div>
                 <div><dt class="text-slate-500">Status</dt><dd class="mt-0.5"><x-ui.badge :variant="$statusVariant[$user->status] ?? 'gray'">{{ ucfirst($user->status) }}</x-ui.badge></dd></div>
                 <div><dt class="text-slate-500">Last login</dt>
-                    <dd class="mt-0.5 font-medium">{{ $user->last_login_at ? \Illuminate\Support\Carbon::parse($user->last_login_at)->diffForHumans() : 'Never' }}</dd></div>
+                    <dd class="mt-0.5 font-medium">{{ $user->last_login_at ? $user->last_login_at->diffForHumans() : 'Never' }}</dd></div>
             </dl>
         </x-ui.card>
 

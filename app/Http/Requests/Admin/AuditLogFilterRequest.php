@@ -9,21 +9,24 @@ use Illuminate\Validation\Rule;
 
 class AuditLogFilterRequest extends FormRequest
 {
-    public function authorize(): bool { return true; }
+    public function authorize(): bool
+    {
+        return true;
+    }
 
     public function rules(): array
     {
         return [
-            'from'        => ['nullable', 'date'],
-            'to'          => ['nullable', 'date', Rule::when($this->filled('from'), 'after_or_equal:from')],
-            'actor_id'    => ['nullable', 'regex:/^(system|\d+)$/'],
-            'category'    => ['nullable', 'string', 'max:100'],
-            'action'      => ['nullable', 'string', 'max:150'],
-            'severity'    => ['nullable', Rule::in(array_keys(AuditCatalog::SEVERITIES))],
+            'from' => ['nullable', 'date'],
+            'to' => ['nullable', 'date', Rule::when($this->filled('from'), 'after_or_equal:from')],
+            'actor_id' => ['nullable', 'regex:/^(system|\d+)$/'],
+            'category' => ['nullable', 'string', 'max:100'],
+            'action' => ['nullable', 'string', 'max:150'],
+            'severity' => ['nullable', Rule::in(array_keys(AuditCatalog::SEVERITIES))],
             'target_type' => ['nullable', 'string', 'max:150'],
-            'target_id'   => ['nullable', 'string', 'max:64'],
-            'ip'          => ['nullable', 'string', 'max:45'],
-            'page'        => ['nullable', 'integer', 'min:1'],
+            'target_id' => ['nullable', 'string', 'max:64'],
+            'ip' => ['nullable', 'string', 'max:45'],
+            'page' => ['nullable', 'integer', 'min:1'],
         ];
     }
 
@@ -34,7 +37,7 @@ class AuditLogFilterRequest extends FormRequest
 
         if (! $this->has('from') && ! $this->has('to')) {
             $data['from'] = now()->subDays(30)->toDateString();
-            $data['to']   = now()->toDateString();
+            $data['to'] = now()->toDateString();
         }
 
         return array_filter($data, fn ($v) => $v !== null && $v !== '');

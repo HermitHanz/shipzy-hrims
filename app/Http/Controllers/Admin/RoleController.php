@@ -58,7 +58,7 @@ class RoleController extends Controller
             'granted'    => $role->permissions()->pluck('name')->all(),
             'usersCount' => $role->users()->count(),
         ]);
-}
+    }
 
     public function update(UpdateRoleRequest $request, Role $role, UpdateRole $action): RedirectResponse
     {

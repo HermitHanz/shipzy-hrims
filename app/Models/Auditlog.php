@@ -8,8 +8,9 @@ use LogicException;
 
 /**
  * Read-only view of audit_logs. Entries are written by AuditLogger and can't be edited or
- * deleted through Eloquent. The retention command removes old rows with the query builder.
- * For stronger protection, also revoke UPDATE and DELETE on this table for the app's database user.
+ * deleted through Eloquent. The retention command (audit:prune) removes old rows with the query builder,
+ * over its own connection (hrims_audit.prune_connection). For stronger protection, point that at the
+ * `audit_prune` connection and revoke UPDATE and DELETE on this table for the app's own database user.
  */
 class AuditLog extends Model
 {

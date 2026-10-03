@@ -9,7 +9,7 @@
     <x-ui.card title="Payroll account">
         @if ($current)
             <dl class="grid gap-4 text-sm sm:grid-cols-3">
-                <div><dt class="text-slate-500">Bank</dt><dd class="mt-0.5 font-medium">{{ $current->bank_name }}</dd></div>
+                <div><dt class="text-slate-500">Bank</dt><dd class="mt-0.5 font-medium">{{ $current->bank_name }}</dd>@if ($current->accountTypeLabel())<dd class="text-xs text-slate-500">{{ $current->accountTypeLabel() }}</dd>@endif</div>
                 <div><dt class="text-slate-500">Account name</dt><dd class="mt-0.5 font-medium">{{ $current->account_name }}</dd></div>
                 <div><x-masked-field label="Account number" :masked="$current->masked()" field="bank_account" :account-id="$current->id" :url="$revealUrl" :can-reveal="$canReveal" /></div>
             </dl>
@@ -35,7 +35,7 @@
                     </x-slot:head>
                     @foreach ($bankAccounts as $a)
                         <tr>
-                            <td class="px-5 py-3"><p class="font-medium">{{ $a->bank_name }}</p><p class="text-xs text-slate-500">{{ $a->account_name }}</p></td>
+                            <td class="px-5 py-3"><p class="font-medium">{{ $a->bank_name }}</p><p class="text-xs text-slate-500">{{ $a->account_name }}@if ($a->accountTypeLabel()) · {{ $a->accountTypeLabel() }}@endif</p></td>
                             <td class="px-5 py-3">
                                 <x-masked-field compact :masked="$a->masked()" field="bank_account" :account-id="$a->id" :url="$revealUrl" :can-reveal="$canReveal && in_array($a->status, ['pending', 'verified'])" />
                             </td>
@@ -61,12 +61,15 @@
     @can('updateBank', $employee)
         <x-ui.card title="Submit a bank account">
             <p class="mb-4 text-sm text-slate-500">New accounts stay <strong>pending</strong>. Payroll keeps using the verified account until someone else verifies the new one.</p>
-            <form method="POST" action="{{ $storeAction }}" class="grid gap-5 sm:grid-cols-3">
+            <form method="POST" action="{{ $storeAction }}" class="grid gap-5 sm:grid-cols-2">
                 @csrf
                 <x-ui.input name="bank_name" label="Bank" required />
+                <x-ui.select name="account_type" label="Account type" placeholder="Choose…" required>
+                    @foreach (\App\Models\EmployeeBankAccount::ACCOUNT_TYPES as $v => $l)<option value="{{ $v }}" @selected(old('account_type') === $v)>{{ $l }}</option>@endforeach
+                </x-ui.select>
                 <x-ui.input name="account_name" label="Account name" required />
                 <x-ui.input name="account_number" label="Account number" sensitive required />
-                <div class="sm:col-span-3 flex justify-end"><x-ui.button type="submit">Submit account</x-ui.button></div>
+                <div class="sm:col-span-2 flex justify-end"><x-ui.button type="submit">Submit account</x-ui.button></div>
             </form>
         </x-ui.card>
     @endcan

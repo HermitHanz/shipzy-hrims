@@ -26,6 +26,8 @@ return [
         'settings' => 'Settings',
         'audit' => 'Audit log',
         'security' => 'Security',
+        'branch' => 'Branches',
+        'department' => 'Departments',
     ],
 
     'events' => [
@@ -65,6 +67,16 @@ return [
         'security.module_unlocked' => ['label' => 'Protected module unlocked', 'severity' => 'notice'],
         'security.module_unlock_failed' => ['label' => 'Protected module unlock failed', 'severity' => 'warning'],
         'security.module_unlock_throttled' => ['label' => 'Protected module unlock locked out', 'severity' => 'warning'],
+
+        'branch.created' => ['label' => 'Branch created', 'severity' => 'info'],
+        'branch.updated' => ['label' => 'Branch updated', 'severity' => 'info'],
+        'branch.status_changed' => ['label' => 'Branch status changed', 'severity' => 'notice'],
+        'branch.deleted' => ['label' => 'Branch deleted', 'severity' => 'notice'],
+
+        'department.created' => ['label' => 'Department created', 'severity' => 'info'],
+        'department.updated' => ['label' => 'Department updated', 'severity' => 'info'],
+        'department.status_changed' => ['label' => 'Department status changed', 'severity' => 'notice'],
+        'department.deleted' => ['label' => 'Department deleted', 'severity' => 'notice'],
     ],
 
     /*
@@ -76,5 +88,14 @@ return [
         'user' => ['model' => \App\Models\User::class, 'label' => 'name', 'route' => null],
         'role' => ['model' => \Spatie\Permission\Models\Role::class, 'label' => 'label', 'fallback' => 'name', 'route' => null],
         'employee' => ['model' => \App\Models\Employee::class, 'label' => 'full_name', 'route' => 'employees.show'],
+        'branch' => ['model' => \App\Models\Branch::class, 'label' => 'name', 'route' => 'organization.branches.edit'],
+        'department' => ['model' => \App\Models\Department::class, 'label' => 'name', 'route' => 'organization.departments.edit'],
     ],
+
+    /*
+    | Database connection `audit:prune` deletes with. Null uses the default connection. In production,
+    | set AUDIT_PRUNE_DB_CONNECTION=audit_prune (config/database.php) so that only the prune user
+    | needs DELETE on audit_logs.
+    */
+    'prune_connection' => env('AUDIT_PRUNE_DB_CONNECTION'),
 ];

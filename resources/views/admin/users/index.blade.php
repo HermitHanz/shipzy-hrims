@@ -74,7 +74,7 @@
                             </td>
                             <td class="px-5 py-3"><x-ui.badge :variant="$statusVariant[$u->status] ?? 'gray'">{{ ucfirst($u->status) }}</x-ui.badge></td>
                             <td class="whitespace-nowrap px-5 py-3 text-slate-600">
-                                {{ $u->last_login_at ? \Illuminate\Support\Carbon::parse($u->last_login_at)->diffForHumans() : 'Never' }}
+                                {{ $u->last_login_at ? $u->last_login_at->diffForHumans() : 'Never' }}
                             </td>
                             <td class="px-5 py-3">
                                 @can('view', $u)

@@ -26,6 +26,11 @@ return [
         ['label' => 'Leave',      'icon' => 'calendar', 'route' => 'leave.index',      'active' => 'leave.*',      'permissions' => ['leave.request.view-team', 'leave.request.view-department', 'leave.request.view-all', 'leave.request.approve-team', 'leave.request.approve-all']],
     ]],
 
+    ['heading' => 'Organization', 'items' => [
+        ['label' => 'Branches',    'icon' => 'building-office', 'route' => 'organization.branches.index',    'active' => 'organization.branches.*',    'permissions' => ['organization.branch.view']],
+        ['label' => 'Departments', 'icon' => 'rectangle-group', 'route' => 'organization.departments.index', 'active' => 'organization.departments.*', 'permissions' => ['organization.department.view']],
+    ]],
+
     ['heading' => 'Operations', 'items' => [
         ['label' => 'Payroll',   'icon' => 'document',  'route' => 'payroll.index',   'active' => 'payroll.*',   'permissions' => ['payroll.run.view', 'payroll.payslip.view-all']],
         ['label' => 'Documents', 'icon' => 'document',  'route' => 'documents.index', 'active' => 'documents.*', 'permissions' => ['documents.file.view-all']],

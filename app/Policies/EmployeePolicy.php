@@ -104,10 +104,12 @@ class EmployeePolicy
         return $this->ownOrAll($user, $employee, 'employee.bank.edit-own', 'employee.bank.edit');
     }
 
-    /** Nobody verifies their own bank account. */
+    /** Nobody verifies their own bank account, and reviewers only act on employees within their view scope. */
     public function verifyBank(User $user, Employee $employee): bool
     {
-        return $user->can('employee.bank.verify') && ! $this->isSelf($user, $employee);
+        return $user->can('employee.bank.verify')
+            && ! $this->isSelf($user, $employee)
+            && $this->view($user, $employee);
     }
 
     public function revealBank(User $user, Employee $employee): bool

@@ -39,6 +39,8 @@ class LoginRequest extends FormRequest
             'email' => $email,
             'password' => $this->string('password')->toString(),
             'status' => 'active',
+            // A separated employee can never sign in, even if their login was left active.
+            fn ($query) => $query->whereDoesntHave('employee', fn ($employee) => $employee->where('status', 'separated')),
         ];
 
         if (! Auth::attempt($credentials, $this->boolean('remember'))) {
@@ -74,6 +76,6 @@ class LoginRequest extends FormRequest
 
     private function throttleKey(): string
     {
-        return Str::transliterate(Str::lower($this->string('email')->toString()) . '|' . $this->ip());
+        return Str::transliterate(Str::lower($this->string('email')->toString()).'|'.$this->ip());
     }
 }

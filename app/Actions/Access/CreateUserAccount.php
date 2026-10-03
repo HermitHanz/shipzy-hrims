@@ -2,6 +2,7 @@
 
 namespace App\Actions\Access;
 
+use App\Models\Employee;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -23,8 +24,20 @@ class CreateUserAccount extends AccessAction
 
         $employeeId = $data['employee_id'] ?? null;
 
-        if ($employeeId && User::where('employee_id', $employeeId)->exists()) {
-            $this->reject('employee_id', 'This employee already has a login.');
+        if ($employeeId) {
+            $employee = Employee::find($employeeId);
+
+            if (! $employee) {
+                $this->reject('employee_id', 'Select a valid employee.');
+            }
+
+            if ($employee->status === 'separated') {
+                $this->reject('employee_id', 'A separated employee cannot be given a login.');
+            }
+
+            if (User::where('employee_id', $employeeId)->exists()) {
+                $this->reject('employee_id', 'This employee already has a login.');
+            }
         }
 
         if (User::where('email', $data['email'])->exists()) {

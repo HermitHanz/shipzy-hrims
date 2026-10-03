@@ -60,7 +60,14 @@ class EmployeeSectionController extends Controller
 
     private function target(Request $request): Employee
     {
-        $employee = $request->route('employee') ?? $request->user()->employee;
+        $employee = $request->route('employee');
+
+        // These methods don't type-hint Employee, so {employee} on the HR routes isn't bound implicitly
+        if ($employee !== null && ! $employee instanceof Employee) {
+            $employee = Employee::findOrFail($employee);
+        }
+
+        $employee ??= $request->user()->employee;
         abort_unless($employee instanceof Employee, 404);
 
         return $employee;

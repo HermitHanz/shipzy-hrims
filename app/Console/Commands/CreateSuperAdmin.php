@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\User;
+use App\Support\Audit\AuditLogger;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -15,7 +16,7 @@ class CreateSuperAdmin extends Command
 
     protected $description = 'Create a Super Admin user (run RolesAndPermissionsSeeder first)';
 
-    public function handle(): int
+    public function handle(AuditLogger $audit): int
     {
         if (! Role::where('name', 'super-admin')->where('guard_name', 'web')->exists()) {
             $this->error('The super-admin role does not exist. Run: php artisan db:seed --class=RolesAndPermissionsSeeder');
@@ -45,25 +46,22 @@ class CreateSuperAdmin extends Command
             return self::FAILURE;
         }
 
-        $user = new User();
-        $user->forceFill([
-            'name' => $name,
-            'email' => $email,
-            'password' => Hash::make($password),
-            'status' => 'active',
-            'email_verified_at' => now(),
-        ])->save();
+        DB::transaction(function () use ($audit, $name, $email, $password) {
+            $user = new User();
+            $user->forceFill([
+                'name' => $name,
+                'email' => $email,
+                'password' => Hash::make($password),
+                'status' => 'active',
+                'must_change_password' => false, // the operator chose this password themselves
+                'email_verified_at' => now(),
+            ])->save();
 
-        $user->assignRole('super-admin');
+            $user->assignRole('super-admin');
 
-        DB::table('audit_logs')->insert([
-            'actor_id' => null,
-            'action' => 'user.super_admin_created',
-            'target_type' => 'user',
-            'target_id' => $user->id,
-            'new_values' => json_encode(['email' => $email]),
-            'created_at' => now(),
-        ]);
+            // No actor: a console bootstrap is recorded as "system"
+            $audit->log('user.super_admin_created', $user, null, ['email' => $email]);
+        });
 
         $this->info("Super Admin created: {$email}");
 

@@ -13,8 +13,10 @@ use App\Support\Settings\Settings;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use DateTimeInterface;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Hash;
 use LogicException;
@@ -183,5 +185,29 @@ class AuditLogTest extends TestCase
         $this->assertDatabaseMissing('audit_logs', ['action' => 'auth.login']);
         $this->assertDatabaseHas('audit_logs', ['action' => 'auth.logout']);
         $this->assertDatabaseHas('audit_logs', ['action' => 'audit.pruned']);
+    }
+
+    public function test_pruning_deletes_over_the_configured_prune_connection(): void
+    {
+        $this->insertLog('auth.login', null, now()->subDays(40));
+
+        // A second named connection sharing the test database, standing in for `audit_prune`
+        config([
+            'database.connections.prune_test' => config('database.connections.'.config('database.default')),
+            'hrims_audit.prune_connection' => 'prune_test',
+        ]);
+        DB::connection('prune_test')->setPdo(DB::connection()->getPdo());
+
+        $deletes = [];
+        Event::listen(QueryExecuted::class, function (QueryExecuted $query) use (&$deletes) {
+            if (str_starts_with(strtolower($query->sql), 'delete')) {
+                $deletes[] = $query->connectionName;
+            }
+        });
+
+        $this->artisan('audit:prune', ['--days' => 30])->assertSuccessful();
+
+        $this->assertSame(['prune_test'], $deletes);
+        $this->assertDatabaseMissing('audit_logs', ['action' => 'auth.login']);
     }
 }

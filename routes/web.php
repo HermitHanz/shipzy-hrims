@@ -15,6 +15,8 @@ use App\Http\Controllers\Employee\RevealController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\ModuleUnlockController;
+use App\Http\Controllers\Organization\BranchController;
+use App\Http\Controllers\Organization\DepartmentController;
 
 Route::redirect('/', '/dashboard');
 
@@ -55,10 +57,9 @@ Route::middleware('auth')->group(function () {
 
         // Audit Logs
         Route::middleware(['permission:system.audit-log.view', 'module.password:audit-log'])->group(function () {
-            Route::get('audit-logs', [AuditLogController::class, 'index'])
-                ->middleware('permission:system.audit-log.view')->name('audit-logs.index');
+            Route::get('audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
             Route::get('audit-logs/export', [AuditLogController::class, 'export'])
-                ->middleware(['permission:system.audit-log.view', 'throttle:10,1'])->name('audit-logs.export');
+                ->middleware(['permission:system.audit-log.export', 'throttle:10,1'])->name('audit-logs.export');
         });
 
         // Settings
@@ -120,10 +121,35 @@ Route::middleware('auth')->group(function () {
             Route::post('reveal', [RevealController::class, 'store'])->middleware('throttle:20,1')->name('reveal');
         });
     });
-}); // End Employee Group Routes
 
-// if (app()->environment('local')) {
-//     Route::view('/dev/layout', 'dev.layout-test')->middleware('auth');
-// }
+    // Organization: branches and departments (static routes BEFORE {branch} / {department})
+    Route::prefix('organization')->name('organization.')->group(function () {
+        Route::controller(BranchController::class)->group(function () {
+            Route::get('branches', 'index')->middleware('permission:organization.branch.view')->name('branches.index');
+            Route::get('branches/create', 'create')->middleware('permission:organization.branch.create')->name('branches.create');
+            Route::post('branches', 'store')->middleware('permission:organization.branch.create')->name('branches.store');
+
+            Route::prefix('branches/{branch}')->where(['branch' => '[0-9]+'])->group(function () {
+                Route::get('edit', 'edit')->middleware('permission:organization.branch.view')->name('branches.edit');
+                Route::put('/', 'update')->middleware('permission:organization.branch.edit')->name('branches.update');
+                Route::patch('status', 'updateStatus')->middleware('permission:organization.branch.deactivate')->name('branches.status.update');
+                Route::delete('/', 'destroy')->middleware('permission:organization.branch.delete')->name('branches.destroy');
+            });
+        });
+
+        Route::controller(DepartmentController::class)->group(function () {
+            Route::get('departments', 'index')->middleware('permission:organization.department.view')->name('departments.index');
+            Route::get('departments/create', 'create')->middleware('permission:organization.department.create')->name('departments.create');
+            Route::post('departments', 'store')->middleware('permission:organization.department.create')->name('departments.store');
+
+            Route::prefix('departments/{department}')->where(['department' => '[0-9]+'])->group(function () {
+                Route::get('edit', 'edit')->middleware('permission:organization.department.view')->name('departments.edit');
+                Route::put('/', 'update')->middleware('permission:organization.department.edit')->name('departments.update');
+                Route::patch('status', 'updateStatus')->middleware('permission:organization.department.deactivate')->name('departments.status.update');
+                Route::delete('/', 'destroy')->middleware('permission:organization.department.delete')->name('departments.destroy');
+            });
+        });
+    });
+}); // End Employee Group Routes
 
 require __DIR__.'/auth.php';

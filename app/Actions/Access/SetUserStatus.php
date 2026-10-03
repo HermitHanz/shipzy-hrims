@@ -17,6 +17,10 @@ class SetUserStatus extends AccessAction
 
         $this->authorize($actor, 'deactivate', $target);
 
+        if ($status === 'active' && $target->employee?->status === 'separated') {
+            $this->reject('status', 'This person is separated. Reactivate the employee record before re-enabling the login.');
+        }
+
         $old = $target->status;
 
         if ($old === $status) {

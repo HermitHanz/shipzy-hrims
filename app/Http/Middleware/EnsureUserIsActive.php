@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Employee;
+use App\Models\User;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -16,7 +18,7 @@ class EnsureUserIsActive
     {
         $user = $request->user();
 
-        if ($user && $user->status !== 'active') {
+        if ($user && ! $this->mayAccess($user)) {
             Auth::guard('web')->logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
@@ -26,5 +28,17 @@ class EnsureUserIsActive
         }
 
         return $next($request);
+    }
+
+    private function mayAccess(User $user): bool
+    {
+        if ($user->status !== 'active') {
+            return false;
+        }
+
+        // Safety net: a separated employee never has access, even if their login was left active
+        // (for example after a direct database edit or an import that skipped the status action).
+        return ! ($user->employee_id
+            && Employee::whereKey($user->employee_id)->where('status', 'separated')->exists());
     }
 }

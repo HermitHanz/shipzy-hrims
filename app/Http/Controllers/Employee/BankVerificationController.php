@@ -17,8 +17,10 @@ class BankVerificationController extends Controller
     {
         Gate::authorize('employee.bank.verify');
 
+        // Same scope as the employee list: reviewers only see employees they can view
         $accounts = EmployeeBankAccount::query()
             ->where('status', 'pending')
+            ->whereIn('employee_id', Employee::visibleTo($request->user(), 'employee.record.view')->select('id'))
             ->with(['employee.user', 'submitter'])
             ->oldest()
             ->paginate(15);

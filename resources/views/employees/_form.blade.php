@@ -19,7 +19,7 @@
             @else
                 <x-ui.input name="employee_number" label="Employee number" required />
             @endif
-            <x-ui.input name="work_email" type="email" label="Work email" :value="$employee->work_email ?? null" required autocomplete="off" />
+            <x-ui.input name="work_email" type="email" label="Work email" :value="$employee->work_email ?? null" autocomplete="off" />
             <x-ui.input name="first_name" label="First name" :value="$employee->first_name ?? null" required />
             <x-ui.input name="middle_name" label="Middle name" :value="$employee->middle_name ?? null" />
             <x-ui.input name="last_name" label="Last name" :value="$employee->last_name ?? null" required />

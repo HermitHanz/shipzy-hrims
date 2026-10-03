@@ -27,7 +27,7 @@
     $fmt = fn ($d) => $d ? \Illuminate\Support\Carbon::parse($d)->format('M j, Y') : '—';
     $rows = [
         'Employee number'     => $employee->employee_number,
-        'Work email'          => $employee->work_email,
+        'Work email'          => $employee->work_email ?: '—',
         'Job title'           => $employee->job_title ?: '—',
         'Employment type'     => \Illuminate\Support\Str::headline((string) $employee->employment_type),
         'Department'          => $employee->department?->name ?? '—',

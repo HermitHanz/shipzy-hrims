@@ -11,9 +11,15 @@ class EmployeeSections
     {
         $employee->loadMissing(['branch', 'department', 'manager', 'user']);
 
-        if ($user->can('viewPersonal', $employee))       $employee->loadMissing('personalDetail');
-        if ($user->can('viewEmergency', $employee))      $employee->loadMissing('emergencyContacts');
-        if ($user->can('viewGovernmentIds', $employee))  $employee->loadMissing('governmentId');
+        if ($user->can('viewPersonal', $employee)) {
+            $employee->loadMissing('personalDetail');
+        }
+        if ($user->can('viewEmergency', $employee)) {
+            $employee->loadMissing('emergencyContacts');
+        }
+        if ($user->can('viewGovernmentIds', $employee)) {
+            $employee->loadMissing('governmentId');
+        }
 
         $bankAccounts = collect();
         if ($user->can('viewBank', $employee)) {

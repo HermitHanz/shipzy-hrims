@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\View;
@@ -24,6 +25,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Attributes that aren't fillable (e.g. User::status) throw instead of vanishing silently
+        Model::preventSilentlyDiscardingAttributes(! $this->app->isProduction());
+
         Gate::before(function ($user, $ability, $arguments = []) {
             // Plain permission checks bypass for Super Admin; model-based checks go through policies.
             if (! empty($arguments)) {

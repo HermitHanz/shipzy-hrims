@@ -15,6 +15,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use App\Models\Employee;
 
+/**
+ * Only name, email and password are mass assignable, on purpose: status, employee_id and
+ * must_change_password control access and are written with forceFill() inside Actions.
+ * Outside production, passing them to create()/fill() throws instead of being dropped
+ * (Model::preventSilentlyDiscardingAttributes in AppServiceProvider).
+ */
 #[Fillable(['name', 'email', 'password'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
@@ -32,6 +38,9 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'must_change_password' => 'boolean',
+            'password_changed_at' => 'datetime',
+            'last_login_at' => 'datetime',
         ];
     }
 

@@ -30,6 +30,12 @@ return [
             'bank'          => ['view-own', 'view-all', 'edit-own', 'edit', 'verify', 'reveal'],
         ],
 
+        // Branches and departments. Deleting is only for records created by mistake.
+        'organization' => [
+            'branch' => ['view', 'create', 'edit', 'deactivate', 'delete'],
+            'department' => ['view', 'create', 'edit', 'deactivate', 'delete'],
+        ],
+
         'attendance' => [
             'record'     => ['view-own', 'view-team', 'view-department', 'view-all', 'edit', 'export'],
             'correction' => ['create', 'approve-team', 'approve-all'],

@@ -23,7 +23,7 @@
                                 @endcan
                                 <p class="font-mono text-xs text-slate-500">{{ $emp->employee_number }}</p>
                             </td>
-                            <td class="px-5 py-3">{{ $a->bank_name }}</td>
+                            <td class="px-5 py-3">{{ $a->bank_name }}@if ($a->accountTypeLabel())<p class="text-xs text-slate-500">{{ $a->accountTypeLabel() }}</p>@endif</td>
                             <td class="px-5 py-3">{{ $a->account_name }}</td>
                             <td class="px-5 py-3">
                                 <x-masked-field compact :masked="$a->masked()" field="bank_account" :account-id="$a->id"

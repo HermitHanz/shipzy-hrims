@@ -25,3 +25,30 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# AI / coding-agent local state
+/.claude/
+/.mcp.json
+/CLAUDE.md
+/AGENTS.md
+/BOOST.md
+/boost.json
+
+# Local AI/developer tooling
+/.codex
+/.cursor/
+/.idea
+/.nova
+/.zed
+/.vscode
+
+# AI/tool-generated local documentation
+/PROJECT_ARCHITECTURE.md
+/MVP_1_OVERVIEW.md
+
+# Local package/tool configuration
+/.npmrc
+
+# Test/cache files
+/.phpunit.result.cache
+/.phpunit.cache/

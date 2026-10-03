@@ -14,6 +14,7 @@ use App\Models\Branch;
 use App\Models\Department;
 use App\Models\Employee;
 use App\Models\User;
+use App\Support\Employees\Options;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -153,7 +154,7 @@ class EmployeeProtectionTest extends TestCase
         $hr = $this->userFor('hr-admin', $this->employee());
 
         $first = app(SubmitBankAccount::class)->handle($employeeUser, $employee, [
-            'bank_name' => 'Bank A', 'account_name' => 'First Last', 'account_number' => '0012 3456 7890',
+            'account_type' => 'savings', 'bank_name' => 'Bank A', 'account_name' => 'First Last', 'account_number' => '0012 3456 7890',
         ]);
 
         $this->assertSame('pending', $first->status);
@@ -163,7 +164,7 @@ class EmployeeProtectionTest extends TestCase
         $this->assertSame('verified', $first->fresh()->status);
 
         $second = app(SubmitBankAccount::class)->handle($employeeUser, $employee, [
-            'bank_name' => 'Bank B', 'account_name' => 'First Last', 'account_number' => '9988776655443',
+            'account_type' => 'savings', 'bank_name' => 'Bank B', 'account_name' => 'First Last', 'account_number' => '9988776655443',
         ]);
 
         // Payroll keeps using the verified account until the new one is verified.
@@ -182,7 +183,7 @@ class EmployeeProtectionTest extends TestCase
 
         // HR enters an account on someone's behalf, then tries to verify it.
         $account = app(SubmitBankAccount::class)->handle($hr, $employee, [
-            'bank_name' => 'Bank A', 'account_name' => 'First Last', 'account_number' => '0012345678900',
+            'account_type' => 'savings', 'bank_name' => 'Bank A', 'account_name' => 'First Last', 'account_number' => '0012345678900',
         ]);
 
         try {
@@ -196,7 +197,7 @@ class EmployeeProtectionTest extends TestCase
         $hrEmployee = $this->employee();
         $hrWithRecord = $this->userFor('hr-admin', $hrEmployee);
         $own = app(SubmitBankAccount::class)->handle($hr, $hrEmployee, [
-            'bank_name' => 'Bank A', 'account_name' => 'HR Person', 'account_number' => '5544332211009',
+            'account_type' => 'savings', 'bank_name' => 'Bank A', 'account_name' => 'HR Person', 'account_number' => '5544332211009',
         ]);
 
         $this->expectException(AuthorizationException::class);
@@ -321,5 +322,187 @@ class EmployeeProtectionTest extends TestCase
         $this->expectException(AuthorizationException::class);
 
         app(CompleteOnboarding::class)->handle($hr, $other, $complete);
+    }
+
+    // ---- regression tests from the screen review --------------------------------
+
+    public function test_bank_reveal_cannot_be_pointed_at_another_employees_account(): void
+    {
+        $hr = $this->userFor('hr-admin', $this->employee());
+        $hr->givePermissionTo('employee.bank.reveal');
+
+        $a = $this->employee();
+        $b = $this->employee();
+
+        $account = app(SubmitBankAccount::class)->handle($this->userFor('employee', $b), $b, [
+            'account_type' => 'savings', 'bank_name' => 'Bank A', 'account_name' => 'Person B', 'account_number' => '0012345678900',
+        ]);
+
+        // Employee A's route with employee B's account id must fail.
+        try {
+            app(RevealSensitiveField::class)->handle($hr, $a, 'bank_account', $account->id);
+            $this->fail('Revealing another employee\'s account through a different employee must be rejected.');
+        } catch (ValidationException) {
+            $this->assertTrue(true);
+        }
+
+        // The correct pairing works.
+        $this->assertSame('0012345678900', app(RevealSensitiveField::class)->handle($hr, $b, 'bank_account', $account->id));
+    }
+
+    public function test_government_id_keys_that_are_absent_are_kept_and_null_keys_are_cleared(): void
+    {
+        $hr = $this->userFor('hr-admin', $this->employee());
+        $target = $this->employee();
+
+        app(SaveGovernmentIds::class)->handle($hr, $target, ['sss' => '3412345678', 'tin' => '123456789']);
+
+        // Only philhealth is sent: sss and tin must stay untouched.
+        app(SaveGovernmentIds::class)->handle($hr, $target->fresh(), ['philhealth' => '123456789012']);
+
+        $record = $target->fresh()->governmentId;
+        $this->assertTrue($record->isSet('sss'));
+        $this->assertTrue($record->isSet('tin'));
+        $this->assertTrue($record->isSet('philhealth'));
+
+        // An explicit null clears just that ID.
+        app(SaveGovernmentIds::class)->handle($hr, $target->fresh(), ['tin' => null]);
+
+        $record = $target->fresh()->governmentId;
+        $this->assertFalse($record->isSet('tin'));
+        $this->assertTrue($record->isSet('sss'));
+    }
+
+    public function test_bank_submissions_need_a_valid_account_type(): void
+    {
+        $employee = $this->employee();
+        $user = $this->userFor('employee', $employee);
+
+        $base = ['bank_name' => 'Bank A', 'account_name' => 'First Last', 'account_number' => '0012345678900'];
+
+        foreach ([[], ['account_type' => 'crypto']] as $extra) {
+            try {
+                app(SubmitBankAccount::class)->handle($user, $employee, $base + $extra);
+                $this->fail('A missing or unknown account type should be rejected.');
+            } catch (ValidationException $e) {
+                $this->assertArrayHasKey('account_type', $e->errors());
+            }
+        }
+
+        $account = app(SubmitBankAccount::class)->handle($user, $employee, $base + ['account_type' => 'payroll']);
+
+        $this->assertSame('payroll', $account->account_type);
+    }
+
+    // ---- over HTTP (request -> controller -> action) -----------------------
+
+    /** HR user whose own onboarding is done, so RequireOnboarding lets them through. */
+    private function onboardedHr(): User
+    {
+        $employee = $this->employee();
+        $employee->forceFill(['onboarding_completed_at' => now()])->save();
+
+        return $this->userFor('hr-admin', $employee);
+    }
+
+    public function test_a_bank_account_submitted_through_the_form_keeps_its_account_type(): void
+    {
+        $hr = $this->onboardedHr();
+        $target = $this->employee();
+        $form = ['bank_name' => 'Bank A', 'account_name' => 'First Last', 'account_number' => '0012 3456 7890'];
+
+        $this->actingAs($hr)->post(route('employees.bank-accounts.store', $target), $form)
+            ->assertSessionHasErrors('account_type');        $this->actingAs($hr)->post(route('employees.bank-accounts.store', $target), $form + ['account_type' => 'savings'])
+            ->assertSessionHasNoErrors()
+            ->assertRedirect(route('employees.show', $target).'#bank');
+
+        $account = $target->bankAccounts()->sole();
+        $this->assertSame('savings', $account->account_type);
+        $this->assertSame('pending', $account->status);
+    }
+
+    public function test_an_employee_can_be_created_without_a_work_email(): void
+    {
+        $hr = $this->onboardedHr();
+
+        $this->actingAs($hr)->post(route('employees.store'), [
+            'employee_number' => 'E-NOMAIL',
+            'first_name' => 'Ana',
+            'last_name' => 'Reyes',
+            'job_title' => 'Warehouse Staff',
+            'employment_type' => array_key_first(Options::types()),
+            'branch_id' => $this->branch->id,
+            'department_id' => $this->department->id,
+            'hire_date' => now()->toDateString(),
+        ])->assertSessionHasNoErrors();
+
+        $this->assertNull(Employee::where('employee_number', 'E-NOMAIL')->sole()->work_email);
+    }
+
+    public function test_employee_search_matches_the_full_name(): void
+    {
+        $hr = $this->onboardedHr();
+        $this->employee(['first_name' => 'Maria', 'last_name' => 'Santos']);
+        $this->employee(['first_name' => 'Juan', 'last_name' => 'Cruz']);
+
+        $this->actingAs($hr)->get(route('employees.index', ['q' => 'Maria Santos']))
+            ->assertOk()
+            ->assertSee('Santos, Maria')
+            ->assertDontSee('Cruz, Juan');
+    }
+
+    // ---- scoped reviewers and filters --------------------------------------
+
+    /** A manager whose role only reaches their direct reports, who can also verify bank accounts. */
+    private function teamVerifier(Employee $manager): User
+    {
+        $user = $this->userFor('employee', $manager);
+        $user->givePermissionTo(['employee.record.view-team', 'employee.bank.verify']);
+        $manager->forceFill(['onboarding_completed_at' => now()])->save();
+
+        return $user;
+    }
+
+    public function test_bank_reviewers_only_see_and_review_employees_within_their_scope(): void
+    {
+        $hr = $this->onboardedHr();
+        $manager = $this->employee();
+        $report = $this->employee(['first_name' => 'Rita', 'last_name' => 'Report', 'manager_id' => $manager->id]);
+        $outsider = $this->employee(['first_name' => 'Otto', 'last_name' => 'Outsider']);
+        $verifier = $this->teamVerifier($manager);
+
+        $form = ['account_type' => 'savings', 'bank_name' => 'Bank A', 'account_name' => 'Name', 'account_number' => '0012345678900'];
+        $reportAccount = app(SubmitBankAccount::class)->handle($hr, $report, $form);
+        $outsiderAccount = app(SubmitBankAccount::class)->handle($hr, $outsider, $form);
+
+        $this->actingAs($verifier)->get(route('employees.bank-verification.index'))
+            ->assertOk()
+            ->assertSee('Report, Rita')
+            ->assertDontSee('Outsider, Otto');
+
+        $this->actingAs($verifier)->post(route('employees.bank-accounts.review', [$outsider, $outsiderAccount]), ['decision' => 'verify'])
+            ->assertForbidden();
+        $this->assertSame('pending', $outsiderAccount->fresh()->status);
+
+        $this->actingAs($verifier)->post(route('employees.bank-accounts.review', [$report, $reportAccount]), ['decision' => 'verify'])
+            ->assertSessionHasNoErrors();
+        $this->assertSame('verified', $reportAccount->fresh()->status);
+    }
+
+    public function test_employee_list_filters_only_offer_units_the_viewer_can_see(): void
+    {
+        $manager = $this->employee();
+        $this->employee(['manager_id' => $manager->id]);
+        $north = Branch::create(['code' => 'NORTH', 'name' => 'North Branch']);
+        $this->employee(['branch_id' => $north->id]);
+
+        $this->actingAs($this->teamVerifier($manager))->get(route('employees.index'))
+            ->assertOk()
+            ->assertSee('Main Office')
+            ->assertDontSee('North Branch');
+
+        $this->actingAs($this->onboardedHr())->get(route('employees.index'))
+            ->assertSee('Main Office')
+            ->assertSee('North Branch');
     }
 }
